@@ -1,27 +1,24 @@
-﻿namespace Entities.Concretes
-{
-    //Başvuran
-    public class Applicant : User
-    {
-        public int UserId { get; set; }
-        public string About { get; set; }
-        public Applicant()
-        {
-        }
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-        public Applicant(int id, int userId, string about, string userName, string firstName, string lastName,
-            DateTime dateOfBirth, string nationalIdentity, string eMail, string password)
-        {
-            Id = id;
-            UserId = userId;
-            About = about;
-            UserName = userName;
-            FirstName = firstName;
-            LastName = lastName;
-            DateOfBirth = dateOfBirth;
-            NationalIdentity = nationalIdentity;
-            Email = eMail;
-            Password = password;
-        }
+namespace Entities.Concretes;
+
+public class Applicant:User
+{
+    public string About { get; set; }
+    public ICollection<Application> Applications { get; set; }
+
+    public Applicant()
+    {
+
+    }
+
+    public Applicant(string about)
+    {
+        About = about;
+
     }
 }

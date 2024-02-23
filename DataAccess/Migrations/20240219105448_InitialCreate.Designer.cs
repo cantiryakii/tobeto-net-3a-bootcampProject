@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DataAccess.Migrations
 {
     [DbContext(typeof(BaseDbContext))]
-    [Migration("20240215171154_InitialCreate")]
+    [Migration("20240219105448_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -43,6 +43,11 @@ namespace DataAccess.Migrations
 
                     b.Property<DateTime>("DeletedDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("Discriminator")
+                        .IsRequired()
+                        .HasMaxLength(13)
+                        .HasColumnType("nvarchar(13)");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -81,7 +86,9 @@ namespace DataAccess.Migrations
 
                     b.ToTable("Users", (string)null);
 
-                    b.UseTptMappingStrategy();
+                    b.HasDiscriminator<string>("Discriminator").HasValue("User");
+
+                    b.UseTphMappingStrategy();
                 });
 
             modelBuilder.Entity("Entities.Concretes.Applicant", b =>
@@ -93,11 +100,7 @@ namespace DataAccess.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("About");
 
-                    b.Property<int>("UserId")
-                        .HasColumnType("int")
-                        .HasColumnName("UserId");
-
-                    b.ToTable("Applicants", (string)null);
+                    b.HasDiscriminator().HasValue("Applicant");
                 });
 
             modelBuilder.Entity("Entities.Concretes.Employee", b =>
@@ -110,10 +113,9 @@ namespace DataAccess.Migrations
                         .HasColumnName("Position");
 
                     b.Property<int>("UserId")
-                        .HasColumnType("int")
-                        .HasColumnName("UserId");
+                        .HasColumnType("int");
 
-                    b.ToTable("Employees", (string)null);
+                    b.HasDiscriminator().HasValue("Employee");
                 });
 
             modelBuilder.Entity("Entities.Concretes.Instructor", b =>
@@ -125,38 +127,7 @@ namespace DataAccess.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("CompanyName");
 
-                    b.Property<int>("UserId")
-                        .HasColumnType("int")
-                        .HasColumnName("UserId");
-
-                    b.ToTable("Instructors", (string)null);
-                });
-
-            modelBuilder.Entity("Entities.Concretes.Applicant", b =>
-                {
-                    b.HasOne("Entities.Concretes.User", null)
-                        .WithOne()
-                        .HasForeignKey("Entities.Concretes.Applicant", "Id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Entities.Concretes.Employee", b =>
-                {
-                    b.HasOne("Entities.Concretes.User", null)
-                        .WithOne()
-                        .HasForeignKey("Entities.Concretes.Employee", "Id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Entities.Concretes.Instructor", b =>
-                {
-                    b.HasOne("Entities.Concretes.User", null)
-                        .WithOne()
-                        .HasForeignKey("Entities.Concretes.Instructor", "Id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.HasDiscriminator().HasValue("Instructor");
                 });
 #pragma warning restore 612, 618
         }
