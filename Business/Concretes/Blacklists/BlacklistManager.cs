@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Azure.Core;
 using Business.Abstracts.Blacklists;
+using Business.Constants;
 using Business.Requests.Blacklists;
 using Business.Responses.Applicant;
 using Business.Responses.Blacklists;
@@ -28,7 +29,7 @@ public class BlacklistManager : IBlacklistService
         Blacklist blacklist = _mapper.Map<Blacklist>(request);
         await _blacklistRepository.AddAsync(blacklist);
         CreatedBlacklistResponse response = _mapper.Map<CreatedBlacklistResponse>(blacklist);
-        return new SuccessDataResult<CreatedBlacklistResponse>(response, "Added Successfully");
+        return new SuccessDataResult<CreatedBlacklistResponse>(response, BlacklistMessages.BlacklistAdded);
     }
 
     public async Task<IResult> DeleteAsync(DeleteBlacklistRequest request)
@@ -43,7 +44,7 @@ public class BlacklistManager : IBlacklistService
     {
         var list = await _blacklistRepository.GetAllAsync();
         List<GetAllBlacklistResponse> response = _mapper.Map<List<GetAllBlacklistResponse>>(list);
-        return new SuccessDataResult<List<GetAllBlacklistResponse>>(response, "Listed Successfully");
+        return new SuccessDataResult<List<GetAllBlacklistResponse>>(response, BlacklistMessages.BlacklistListed);
     }
 
     public async Task<IDataResult<GetByIdBlacklistResponse>> GetByApplicantIdAsync(int id)
@@ -52,9 +53,9 @@ public class BlacklistManager : IBlacklistService
         if (item != null)
         {
             GetByIdBlacklistResponse response = _mapper.Map<GetByIdBlacklistResponse>(item);
-            return new SuccessDataResult<GetByIdBlacklistResponse>(response, "Found Succesfully.");
+            return new SuccessDataResult<GetByIdBlacklistResponse>(response, BlacklistMessages.BlacklistFound);
         }
-        return new ErrorDataResult<GetByIdBlacklistResponse>("BlackListed applicant could not be found.");
+        return new ErrorDataResult<GetByIdBlacklistResponse>(BlacklistMessages.BlacklistNotFound);
     }
 
     public async Task<IDataResult<GetByIdBlacklistResponse>> GetByIdAsync(int id)
@@ -65,9 +66,9 @@ public class BlacklistManager : IBlacklistService
 
         if (item != null)
         {
-            return new SuccessDataResult<GetByIdBlacklistResponse>(response, "Found Succesfully.");
+            return new SuccessDataResult<GetByIdBlacklistResponse>(response, BlacklistMessages.BlacklistFound);
         }
-        return new ErrorDataResult<GetByIdBlacklistResponse>("Blacklist could not be found.");
+        return new ErrorDataResult<GetByIdBlacklistResponse>(BlacklistMessages.BlacklistNotFound);
     }
 
     public async Task<IDataResult<UpdatedBlacklistResponse>> UpdateAsync(UpdateBlacklistRequest request)
@@ -75,13 +76,13 @@ public class BlacklistManager : IBlacklistService
         var item = await _blacklistRepository.GetAsync(x => x.Id == request.Id);
         if (request.Id == 0 || item == null)
         {
-            return new ErrorDataResult<UpdatedBlacklistResponse>("Blacklist could not be found.");
+            return new ErrorDataResult<UpdatedBlacklistResponse>(BlacklistMessages.BlacklistNotFound);
         }
 
         _mapper.Map(request, item);
         await _blacklistRepository.UpdateAsync(item);
 
         UpdatedBlacklistResponse response = _mapper.Map<UpdatedBlacklistResponse>(item);
-        return new SuccessDataResult<UpdatedBlacklistResponse>(response, "Blacklist updated successfully!");
+        return new SuccessDataResult<UpdatedBlacklistResponse>(response, BlacklistMessages.BlacklistUpdated);
     }
 }

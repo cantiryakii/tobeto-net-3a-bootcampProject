@@ -1,8 +1,10 @@
 ﻿using AutoMapper;
 using Business.Abstracts.Applications;
 using Business.Abstracts.Blacklists;
+using Business.Constants;
 using Business.Requests.Applications;
 using Business.Responses.Applications;
+using Business.Rules;
 using Core.Exceptions.Types;
 using Core.Utilities.Results;
 using DataAccess.Abstracts;
@@ -15,24 +17,23 @@ public class ApplicationManager : IApplicationService
 {
     private readonly IApplicationRepository _applicationRepository;
     private readonly IMapper _mapper;
-    private readonly IBlacklistService _blacklistService;
+    private readonly ApplicationBusinessRules _applicationBusinessRules;
 
-    public ApplicationManager(IApplicationRepository applicationRepository, IMapper mapper, IBlacklistService blacklistService)
+    public ApplicationManager(IApplicationRepository applicationRepository, IMapper mapper, ApplicationBusinessRules applicationBusinessRules)
     {
         _applicationRepository = applicationRepository;
         _mapper = mapper;
-        _blacklistService = blacklistService;
-
+        _applicationBusinessRules = applicationBusinessRules;
     }
 
     public async Task<IDataResult<CreatedApplicationResponse>> AddAsync(CreateApplicationRequest request)
     {
-        await CheckIfApplicantIsBlacklisted(request.ApplicantId);
+        await _applicationBusinessRules.CheckIfApplicantIsBlacklisted(request.ApplicantId);
 
         Application application = _mapper.Map<Application>(request);
         await _applicationRepository.AddAsync(application);
         CreatedApplicationResponse response = _mapper.Map<CreatedApplicationResponse>(application);
-        return new SuccessDataResult<CreatedApplicationResponse>(response, "Added Successfully");
+        return new SuccessDataResult<CreatedApplicationResponse>(response, ApplicationMessages.ApplicationAdded);
     }
 
     public async Task<IResult> DeleteAsync(DeleteApplicationRequest request)
@@ -47,7 +48,7 @@ public class ApplicationManager : IApplicationService
     {
         var list = await _applicationRepository.GetAllAsync();
         List<GetAllApplicationResponse> response = _mapper.Map<List<GetAllApplicationResponse>>(list);
-        return new SuccessDataResult<List<GetAllApplicationResponse>>(response, "Listed Successfully");
+        return new SuccessDataResult<List<GetAllApplicationResponse>>(response, ApplicationMessages.ApplicationListed);
     }
 
     public async Task<IDataResult<GetByIdApplicationResponse>> GetByIdAsync(int id)
@@ -58,9 +59,9 @@ public class ApplicationManager : IApplicationService
 
         if (item != null)
         {
-            return new SuccessDataResult<GetByIdApplicationResponse>(response, "Found Succesfully.");
+            return new SuccessDataResult<GetByIdApplicationResponse>(response, ApplicationMessages.ApplicationFound);
         }
-        return new ErrorDataResult<GetByIdApplicationResponse>("Application could not be found.");
+        return new ErrorDataResult<GetByIdApplicationResponse>(ApplicationMessages.ApplicationNotFound);
     }
 
     public async Task<IDataResult<UpdatedApplicationResponse>> UpdateAsync(UpdateApplicationRequest request)
@@ -68,23 +69,17 @@ public class ApplicationManager : IApplicationService
         var item = await _applicationRepository.GetAsync(p => p.Id == request.Id);
         if (request.Id == 0 || item == null)
         {
-            return new ErrorDataResult<UpdatedApplicationResponse>("Application could not be found.");
+            return new ErrorDataResult<UpdatedApplicationResponse>(ApplicationMessages.ApplicationNotFound);
         }
 
         _mapper.Map(request, item);
         await _applicationRepository.UpdateAsync(item);
 
         UpdatedApplicationResponse response = _mapper.Map<UpdatedApplicationResponse>(item);
-        return new SuccessDataResult<UpdatedApplicationResponse>(response, "Application updated successfully!");
+        return new SuccessDataResult<UpdatedApplicationResponse>(response, ApplicationMessages.ApplicationUpdated);
     }
 
-    public async Task CheckIfApplicantIsBlacklisted(int id)
-    {
-        var item = await _blacklistService.GetByApplicantIdAsync(id);            if (item.Data != null)
-        {
-            throw new BusinessException("Applicant is blacklisted");
-        }
-    }
+
 
 
 }
