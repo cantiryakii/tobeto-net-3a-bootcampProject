@@ -1,16 +1,13 @@
 ﻿using AutoMapper;
 using Business.Abstracts.Employee;
 using Business.Constants;
-using Business.Requests.Applications;
 using Business.Requests.Employee;
-using Business.Responses.Applications;
 using Business.Responses.Employee;
 using Business.Rules;
-using Core.Exceptions.Types;
-using Core.Utilities.Helpers;
+using Core.Aspects.Autofac.Logging;
+using Core.CrossCuttingConcerns.Logging.Serilog.Loggers;
 using Core.Utilities.Results;
 using DataAccess.Abstracts;
-using DataAccess.Concretes.Repositories;
 using Entities.Concretes;
 
 namespace Business.Concretes;
@@ -19,33 +16,32 @@ public class EmployeeManager : IEmployeeService
 {
     private readonly IEmployeeRepository _employeeRepository;
     private readonly IMapper _mapper;
-    private readonly EmployeeBusinessRules _employeeBusinessRules;
-
-    public EmployeeManager(IEmployeeRepository employeeRepository, IMapper mapper, EmployeeBusinessRules employeeBusinessRules)
+    private readonly EmployeeBusinessRules _rules;
+    public EmployeeManager(IEmployeeRepository employeeRepository, IMapper mapper, EmployeeBusinessRules rules)
     {
         _employeeRepository = employeeRepository;
         _mapper = mapper;
-        _employeeBusinessRules = employeeBusinessRules;
+        _rules = rules;
     }
-
+    [LogAspect(typeof(MongoDbLogger))]
     public async Task<IDataResult<CreatedEmployeeResponse>> AddAsync(CreateEmployeeRequest request)
     {
-        await _employeeBusinessRules.CheckUserNameIfExist(request.UserName, null);
+        await _rules.CheckUserNameIfExist(request.UserName, null);
 
         Employee employee = _mapper.Map<Employee>(request);
         await _employeeRepository.AddAsync(employee);
         CreatedEmployeeResponse response = _mapper.Map<CreatedEmployeeResponse>(employee);
         return new SuccessDataResult<CreatedEmployeeResponse>(response, EmployeeMessages.EmployeeAdded);
     }
-
+    [LogAspect(typeof(MongoDbLogger))]
     public async Task<IResult> DeleteAsync(DeleteEmployeeRequest request)
     {
-        await _employeeBusinessRules.CheckIdIfNotExist(request.Id);
+        await _rules.CheckIdIfNotExist(request.Id);
 
         var item = await _employeeRepository.GetAsync(x=>x.Id == request.Id);
         await _employeeRepository.DeleteAsync(item);
         
-        return new SuccessResult("Deleted Successfully");
+        return new SuccessResult(EmployeeMessages.EmployeeDeleted);
     }
 
     public async Task<IDataResult<List<GetAllEmployeeResponse>>> GetAllAsync()
@@ -57,7 +53,7 @@ public class EmployeeManager : IEmployeeService
 
     public async Task<IDataResult<GetByIdEmployeeResponse>> GetByIdAsync(int id)
     {
-        await _employeeBusinessRules.CheckIdIfNotExist(id);
+        await _rules.CheckIdIfNotExist(id);
 
         var item = await _employeeRepository.GetAsync(x => x.Id == id);
 
@@ -67,11 +63,11 @@ public class EmployeeManager : IEmployeeService
        
         
     }
-
+    [LogAspect(typeof(MongoDbLogger))]
     public async Task<IDataResult<UpdatedEmployeeResponse>> UpdateAsync(UpdateEmployeeRequest request)
     {
-        await _employeeBusinessRules.CheckIdIfNotExist(request.Id);
-        await _employeeBusinessRules.CheckUserNameIfExist(request.UserName, request.Id);
+        await _rules.CheckIdIfNotExist(request.Id);
+        await _rules.CheckUserNameIfExist(request.UserName, request.Id);
 
         var item = await _employeeRepository.GetAsync(p => p.Id == request.Id);
 
@@ -81,5 +77,5 @@ public class EmployeeManager : IEmployeeService
         UpdatedEmployeeResponse response = _mapper.Map<UpdatedEmployeeResponse>(item);
         return new SuccessDataResult<UpdatedEmployeeResponse>(response, EmployeeMessages.EmployeeUpdated);
     }
-
+    
 }

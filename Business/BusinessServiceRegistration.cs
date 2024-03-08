@@ -1,22 +1,5 @@
-﻿using Business.Abstracts;
-using Business.Abstracts.Applications;
-using Business.Abstracts.ApplicationStates;
-using Business.Abstracts.Blacklists;
-using Business.Abstracts.Bootcamps;
-using Business.Abstracts.BootcampStates;
-using Business.Abstracts.Employee;
-using Business.Abstracts.Instructor;
-using Business.Abstracts.User;
-using Business.Concretes;
-using Business.Concretes.Applications;
-using Business.Concretes.ApplicationStates;
-using Business.Concretes.Blacklists;
-using Business.Concretes.Bootcamps;
-using Business.Concretes.BootcampStates;
-using Core.CrossCuttingConcerns.Rules;
+﻿using Core.CrossCuttingConcerns.Rules;
 using Core.Extensions;
-using Entities.Concretes;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 
@@ -30,7 +13,6 @@ public static class BusinessServiceRegistration
 
         services.AddSubClassesOfType(Assembly.GetExecutingAssembly(), typeof(BaseBusinessRules));
 
-
         //services.AddScoped<IUserService, UserManager>();
         //services.AddScoped<IInstructorService, InstructorManager>();
         //services.AddScoped<IApplicantService, ApplicantManager>();
@@ -41,10 +23,11 @@ public static class BusinessServiceRegistration
         //services.AddScoped<IBootcampStateService, BootcampStateManager>();
         //services.AddScoped<IBlacklistService, BlacklistManager>();
 
-        services.RegisterAssemblyTypes(Assembly.GetExecutingAssembly()).
-    Where(t => t.ServiceType.Name.EndsWith("Manager"));
+        services.RegisterAssemblyTypes(Assembly.GetExecutingAssembly()).Where(x => x.ServiceType.Name.EndsWith("Manager"));
 
         return services;
 
     }
+
+
 }

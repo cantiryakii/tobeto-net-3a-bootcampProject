@@ -1,35 +1,41 @@
-﻿using Core.CrossCuttingConcerns.Rules;
+﻿using Business.Constants;
+using Core.CrossCuttingConcerns.Rules;
 using Core.Exceptions.Types;
 using Core.Utilities.Helpers;
 using DataAccess.Abstracts;
-using DataAccess.Concretes.Repositories;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace Business.Rules;
 
-public class EmployeeBusinessRules: BaseBusinessRules
+public class EmployeeBusinessRules:BaseBusinessRules
 {
-    private readonly IEmployeeRepository _repository;
+    private readonly IEmployeeRepository _employeeRepository;
 
-    public EmployeeBusinessRules(IEmployeeRepository repository)
+    public EmployeeBusinessRules(IEmployeeRepository employeeRepository)
     {
-        _repository = repository;
+        _employeeRepository = employeeRepository;
     }
+
     public async Task CheckUserNameIfExist(string userName, int? id)
     {
 
-        var item = await _repository.GetAsync(x => x.UserName == SeoHelper.ToSeoUrl(userName) && x.Id != id);
+        var item = await _employeeRepository.GetAsync(x => x.UserName == SeoHelper.ToSeoUrl(userName) && x.Id != id);
         if (item != null)
         {
-            throw new BusinessException("Username already exist");
+            throw new BusinessException(EmployeeMessages.UserNameCheck);
         }
     }
 
     public async Task CheckIdIfNotExist(int id)
     {
-        var item = await _repository.GetAsync(x => x.Id == id);
+        var item = await _employeeRepository.GetAsync(x => x.Id == id);
         if (item == null)
         {
-            throw new NotFoundException("ID could not be found.");
+            throw new NotFoundException(EmployeeMessages.EmployeeIdCheck);
         }
     }
 }

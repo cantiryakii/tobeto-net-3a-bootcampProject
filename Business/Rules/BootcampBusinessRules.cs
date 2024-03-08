@@ -1,24 +1,25 @@
-﻿using Core.CrossCuttingConcerns.Rules;
+﻿using Business.Constants;
+using Core.CrossCuttingConcerns.Rules;
 using Core.Exceptions.Types;
 using DataAccess.Abstracts;
-using DataAccess.Concretes.Repositories;
 
 namespace Business.Rules;
 
-public class BootcampBusinessRules: BaseBusinessRules
+public class BootcampBusinessRules : BaseBusinessRules
 {
-    private readonly IBootcampRepository _repository;
+    private readonly IBootcampRepository _bootcampRepository;
 
-    public BootcampBusinessRules(IBootcampRepository repository)
+    public BootcampBusinessRules(IBootcampRepository bootcampRepository)
     {
-        _repository = repository;
+        _bootcampRepository = bootcampRepository;
     }
+
     public async Task CheckIdIfNotExist(int id)
     {
-        var item = await _repository.GetAsync(x => x.Id == id);
+        var item = await _bootcampRepository.GetAsync(x => x.Id == id);
         if (item == null)
         {
-            throw new NotFoundException("ID could not be found.");
+            throw new NotFoundException(BootcampMessages.BootcampIdCheck);
         }
     }
 }

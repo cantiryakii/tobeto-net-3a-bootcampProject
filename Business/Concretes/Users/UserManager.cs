@@ -1,22 +1,14 @@
 ﻿using AutoMapper;
-using Azure.Core;
 using Business.Abstracts.User;
 using Business.Constants;
-using Business.Requests.Instructor;
 using Business.Requests.User;
-using Business.Responses.Instructor;
 using Business.Responses.User;
 using Business.Rules;
-using Core.Exceptions.Types;
+using Core.Aspects.Autofac.Logging;
+using Core.CrossCuttingConcerns.Logging.Serilog.Loggers;
 using Core.Utilities.Results;
 using DataAccess.Abstracts;
-using DataAccess.Concretes.Repositories;
 using Entities.Concretes;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Business.Concretes;
 
@@ -24,30 +16,29 @@ public class UserManager : IUserService
 {
     private readonly IUserRepository _userRepository;
     private readonly IMapper _mapper;
-    private readonly UserBusinessRules _userBusinessRules;
-
-    public UserManager(IUserRepository userRepository, IMapper mapper, UserBusinessRules userBusinessRules)
+    private readonly UserBusinessRules _rules;
+    public UserManager(IUserRepository userRepository, IMapper mapper, UserBusinessRules rules)
     {
         _userRepository = userRepository;
         _mapper = mapper;
-        _userBusinessRules = userBusinessRules;
+        _rules = rules;
     }
-
+    [LogAspect(typeof(MongoDbLogger))]
     public async Task<IDataResult<CreatedUserResponse>> AddAsync(CreateUserRequest request)
     {
         User user = _mapper.Map<User>(request);
         await _userRepository.AddAsync(user);
         CreatedUserResponse response = _mapper.Map<CreatedUserResponse>(user);
-        return new SuccessDataResult<CreatedUserResponse>(response,UserMessages.UserAdded);
+        return new SuccessDataResult<CreatedUserResponse>(response, UserMessages.UserAdded);
     }
-
+    [LogAspect(typeof(MongoDbLogger))]
     public async Task<IResult> DeleteAsync(DeleteUserRequest request)
     {
-        await _userBusinessRules.CheckIdIfNotExist(request.Id);
-        var item = await _userRepository.GetAsync(x=> x.Id == request.Id);
+        await _rules.CheckIdIfNotExist(request.Id);
+        var item = await _userRepository.GetAsync(x => x.Id == request.Id);
         await _userRepository.DeleteAsync(item);
-        
-        return new SuccessResult("Deleted Successfully");
+
+        return new SuccessResult(UserMessages.UserDeleted);
     }
 
     public async Task<IDataResult<List<GetAllUserResponse>>> GetAllAsync()
@@ -59,26 +50,22 @@ public class UserManager : IUserService
 
     public async Task<IDataResult<GetByIdUserResponse>> GetByIdAsync(int id)
     {
-        await _userBusinessRules.CheckIdIfNotExist(id);
+        await _rules.CheckIdIfNotExist(id);
 
         var item = await _userRepository.GetAsync(x => x.Id == id);
 
         GetByIdUserResponse response = _mapper.Map<GetByIdUserResponse>(item);
 
-        if (item != null)
-        {
-            return new SuccessDataResult<GetByIdUserResponse>(response, UserMessages.UserFound);
-        }
-        return new ErrorDataResult<GetByIdUserResponse>(UserMessages.UserNotFound);
-    }
 
+        return new SuccessDataResult<GetByIdUserResponse>(response, UserMessages.UserFound);
+
+    }
+    [LogAspect(typeof(MongoDbLogger))]
     public async Task<IDataResult<UpdatedUserResponse>> UpdateAsync(UpdateUserRequest request)
     {
+        await _rules.CheckIdIfNotExist(request.Id);
+
         var item = await _userRepository.GetAsync(p => p.Id == request.Id);
-        if (request.Id == 0 || item == null)
-        {
-            return new ErrorDataResult<UpdatedUserResponse>(UserMessages.UserNotFound);
-        }
 
         _mapper.Map(request, item);
         await _userRepository.UpdateAsync(item);
@@ -86,5 +73,6 @@ public class UserManager : IUserService
         UpdatedUserResponse response = _mapper.Map<UpdatedUserResponse>(item);
         return new SuccessDataResult<UpdatedUserResponse>(response, UserMessages.UserUpdated);
     }
+
 
 }

@@ -4,7 +4,8 @@ using Business.Constants;
 using Business.Requests.ApplicationStates;
 using Business.Responses.ApplicationStates;
 using Business.Rules;
-using Core.Exceptions.Types;
+using Core.Aspects.Autofac.Logging;
+using Core.CrossCuttingConcerns.Logging.Serilog.Loggers;
 using Core.Utilities.Results;
 using DataAccess.Abstracts;
 using Entities.Concretes;
@@ -16,15 +17,15 @@ public class ApplicationStateManager : IApplicationStateService
 
     private readonly IApplicationStateRepository _applicationStateRepository;
     private readonly IMapper _mapper;
-    private readonly ApplicationStateBusinessRules _applicationStateBusinessRules;
+    private readonly ApplicationStateBusinessRules _rules;
 
-    public ApplicationStateManager(IApplicationStateRepository applicationStateRepository, IMapper mapper, ApplicationStateBusinessRules applicationStateBusinessRules)
+    public ApplicationStateManager(IApplicationStateRepository applicationRepository, IMapper mapper, ApplicationStateBusinessRules rules)
     {
-        _applicationStateRepository = applicationStateRepository;
+        _applicationStateRepository = applicationRepository;
         _mapper = mapper;
-        _applicationStateBusinessRules = applicationStateBusinessRules;
+        _rules = rules;
     }
-
+    [LogAspect(typeof(MongoDbLogger))]
     public async Task<IDataResult<CreatedApplicationStateResponse>> AddAsync(CreateApplicationStateRequest request)
     {
         ApplicationState applicationState = _mapper.Map<ApplicationState>(request);
@@ -32,15 +33,15 @@ public class ApplicationStateManager : IApplicationStateService
         CreatedApplicationStateResponse response = _mapper.Map<CreatedApplicationStateResponse>(applicationState);
         return new SuccessDataResult<CreatedApplicationStateResponse>(response, ApplicationStateMessages.ApplicationStateAdded);
     }
-
+    [LogAspect(typeof(MongoDbLogger))]
     public async Task<IResult> DeleteAsync(DeleteApplicationStateRequest request)
     {
-        await _applicationStateBusinessRules.CheckIdIfNotExist(request.Id);
+        await _rules.CheckIdIfNotExist(request.Id);
 
         var item = await _applicationStateRepository.GetAsync(x => x.Id == request.Id);
         await _applicationStateRepository.DeleteAsync(item);
 
-        return new SuccessResult("Deleted Successfully");
+        return new SuccessResult(ApplicationStateMessages.ApplicationStateDeleted);
     }
 
     public async Task<IDataResult<List<GetAllApplicationStateResponse>>> GetAllAsync()
@@ -52,24 +53,22 @@ public class ApplicationStateManager : IApplicationStateService
 
     public async Task<IDataResult<GetByIdApplicationStateResponse>> GetByIdAsync(int id)
     {
-        await _applicationStateBusinessRules.CheckIdIfNotExist(id);
+        await _rules.CheckIdIfNotExist(id);
 
         var item = await _applicationStateRepository.GetAsync(x => x.Id == id);
 
         GetByIdApplicationStateResponse response = _mapper.Map<GetByIdApplicationStateResponse>(item);
 
-            return new SuccessDataResult<GetByIdApplicationStateResponse>(response, ApplicationStateMessages.ApplicationStateFound);
-       
-        
-    }
+        return new SuccessDataResult<GetByIdApplicationStateResponse>(response, ApplicationStateMessages.ApplicationStateFound);
 
+
+    }
+    [LogAspect(typeof(MongoDbLogger))]
     public async Task<IDataResult<UpdatedApplicationStateResponse>> UpdateAsync(UpdateApplicationStateRequest request)
     {
+        await _rules.CheckIdIfNotExist(request.Id);
+
         var item = await _applicationStateRepository.GetAsync(p => p.Id == request.Id);
-        if (request.Id == 0 || item == null)
-        {
-            return new ErrorDataResult<UpdatedApplicationStateResponse>(ApplicationStateMessages.ApplicationStateNotFound);
-        }
 
         _mapper.Map(request, item);
         await _applicationStateRepository.UpdateAsync(item);

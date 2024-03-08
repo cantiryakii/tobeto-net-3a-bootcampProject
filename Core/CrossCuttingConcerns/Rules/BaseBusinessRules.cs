@@ -1,5 +1,11 @@
-﻿namespace Core.CrossCuttingConcerns.Rules;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-public class BaseBusinessRules
+namespace Core.CrossCuttingConcerns.Rules;
+
+public abstract class BaseBusinessRules
 {
 }

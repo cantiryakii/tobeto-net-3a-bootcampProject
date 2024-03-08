@@ -25,10 +25,8 @@ public static class DataAccessServiceRegisration
         //services.AddScoped<IBootcampStateRepository, BootcampStateRepository>();
         //services.AddScoped<IBlacklistRepository, BlacklistRepository>();
 
-        services.RegisterAssemblyTypes(Assembly.GetExecutingAssembly()).
-            Where(t => t.ServiceType.Name.EndsWith("Repository"));
+        services.RegisterAssemblyTypes(Assembly.GetExecutingAssembly()).Where(x => x.ServiceType.Name.EndsWith("Repository"));
 
         return services;
     }
-
 }

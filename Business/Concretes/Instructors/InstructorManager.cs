@@ -1,16 +1,13 @@
 ﻿using AutoMapper;
 using Business.Abstracts.Instructor;
 using Business.Constants;
-using Business.Requests.Employee;
 using Business.Requests.Instructor;
-using Business.Responses.Employee;
 using Business.Responses.Instructor;
 using Business.Rules;
-using Core.Exceptions.Types;
-using Core.Utilities.Helpers;
+using Core.Aspects.Autofac.Logging;
+using Core.CrossCuttingConcerns.Logging.Serilog.Loggers;
 using Core.Utilities.Results;
 using DataAccess.Abstracts;
-using DataAccess.Concretes.Repositories;
 using Entities.Concretes;
 
 namespace Business.Concretes;
@@ -19,33 +16,33 @@ public class InstructorManager : IInstructorService
 {
     private readonly IInstructorRepository _instructorRepository;
     private readonly IMapper _mapper;
-    private readonly InstructorBusinessRules _instructorBusinessRules;
+    private readonly InstructorBusinessRules _rules;
 
-    public InstructorManager(IInstructorRepository instructorRepository, IMapper mapper, InstructorBusinessRules instructorBusinessRules)
+    public InstructorManager(IInstructorRepository instructorRepository, IMapper mapper, InstructorBusinessRules rules)
     {
         _instructorRepository = instructorRepository;
         _mapper = mapper;
-        _instructorBusinessRules = instructorBusinessRules;
+        _rules = rules;
     }
-
+    [LogAspect(typeof(MongoDbLogger))]
     public async Task<IDataResult<CreatedInstructorResponse>> AddAsync(CreateInstructorRequest request)
     {
-        await _instructorBusinessRules.CheckUserNameIfExist(request.UserName, null);
+        await _rules.CheckUserNameIfExist(request.UserName, null);
 
         Instructor instructor = _mapper.Map<Instructor>(request);
         await _instructorRepository.AddAsync(instructor);
         CreatedInstructorResponse response = _mapper.Map<CreatedInstructorResponse>(instructor);
         return new SuccessDataResult<CreatedInstructorResponse>(response, InstructorMessages.InstructorAdded);
     }
-
+    [LogAspect(typeof(MongoDbLogger))]
     public async Task<IResult> DeleteAsync(DeleteInstructorRequest request)
     {
-        await _instructorBusinessRules.CheckIdIfNotExist(request.Id);
+        await _rules.CheckIdIfNotExist(request.Id);
 
         var item = await _instructorRepository.GetAsync(x => x.Id == request.Id);
         await _instructorRepository.DeleteAsync(item);
-        
-        return new SuccessResult("Deleted Successfully");
+
+        return new SuccessResult(InstructorMessages.InstructorDeleted);
     }
 
     public async Task<IDataResult<List<GetAllInstructorResponse>>> GetAllAsync()
@@ -57,23 +54,22 @@ public class InstructorManager : IInstructorService
 
     public async Task<IDataResult<GetByIdInstructorResponse>> GetByIdAsync(int id)
     {
-        await _instructorBusinessRules.CheckIdIfNotExist(id);
+        await _rules.CheckIdIfNotExist(id);
 
         var item = await _instructorRepository.GetAsync(x => x.Id == id);
 
         GetByIdInstructorResponse response = _mapper.Map<GetByIdInstructorResponse>(item);
 
-        if (item != null)
-        {
-            return new SuccessDataResult<GetByIdInstructorResponse>(response, InstructorMessages.InstructorFound);
-        }
-        return new ErrorDataResult<GetByIdInstructorResponse>(InstructorMessages.InstructorNotFound);
-    }
 
+        return new SuccessDataResult<GetByIdInstructorResponse>(response, InstructorMessages.InstructorFound);
+
+
+    }
+    [LogAspect(typeof(MongoDbLogger))]
     public async Task<IDataResult<UpdatedInstructorResponse>> UpdateAsync(UpdateInstructorRequest request)
     {
-        await _instructorBusinessRules.CheckIdIfNotExist(request.Id);
-        await _instructorBusinessRules.CheckUserNameIfExist(request.UserName, request.Id);
+        await _rules.CheckIdIfNotExist(request.Id);
+        await _rules.CheckUserNameIfExist(request.UserName, request.Id);
 
         var item = await _instructorRepository.GetAsync(p => p.Id == request.Id);
 
@@ -83,5 +79,6 @@ public class InstructorManager : IInstructorService
         UpdatedInstructorResponse response = _mapper.Map<UpdatedInstructorResponse>(item);
         return new SuccessDataResult<UpdatedInstructorResponse>(response, InstructorMessages.InstructorUpdated);
     }
+
 
 }

@@ -1,25 +1,30 @@
-﻿using Core.CrossCuttingConcerns.Rules;
+﻿using Business.Constants;
+using Core.CrossCuttingConcerns.Rules;
 using Core.Exceptions.Types;
 using DataAccess.Abstracts;
-using DataAccess.Concretes.Repositories;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace Business.Rules;
 
-public class UserBusinessRules: BaseBusinessRules
+public class UserBusinessRules:BaseBusinessRules
 {
-    private readonly IUserRepository _repository;
+    private readonly IUserRepository _userRepository;
 
-    public UserBusinessRules(IUserRepository repository)
+    public UserBusinessRules(IUserRepository userRepository)
     {
-        _repository = repository;
+        _userRepository = userRepository;
     }
+
     public async Task CheckIdIfNotExist(int id)
     {
-        var item = await _repository.GetAsync(x => x.Id == id);
+        var item = await _userRepository.GetAsync(x => x.Id == id);
         if (item == null)
         {
-            throw new NotFoundException("ID could not be found.");
+            throw new NotFoundException(UserMessages.UserIdCheck);
         }
     }
-
 }
